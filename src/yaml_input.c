@@ -881,8 +881,11 @@ static PetscErrorCode ValidateConfig(MPI_Comm comm, RDyConfig *config, PetscBool
   if (config->numerics.temporal != TEMPORAL_EULER) {
     PetscCheck(PETSC_FALSE, comm, PETSC_ERR_USER, "Only the forward euler temporal method (EULER) is currently implemented.");
   }
-  if (config->numerics.riemann != RIEMANN_ROE) {
-    PetscCheck(PETSC_FALSE, comm, PETSC_ERR_USER, "Only the roe riemann solver (ROE) is currently implemented.");
+  if (config->numerics.riemann != RIEMANN_ROE &&
+    config->numerics.riemann != RIEMANN_HLL &&
+    config->numerics.riemann != RIEMANN_HLLC) {
+  PetscCheck(PETSC_FALSE, comm, PETSC_ERR_USER,
+             "Unsupported riemann solver. Supported solvers: roe, hll, hllc.");
   }
 
   PetscCheck(strlen(config->grid.file), comm, PETSC_ERR_USER, "grid.file not specified!");

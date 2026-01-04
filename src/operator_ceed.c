@@ -62,7 +62,8 @@ static PetscErrorCode CreateInteriorFluxQFunction(Ceed ceed, const RDyConfig con
       PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1, SWEFlux_HLL, SWEFlux_HLL_loc, qf)); 
       break; 
      case RIEMANN_HLLC: 
-      PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1, SWEFlux_HLLC, SWEFlux_HLLC_loc, qf)); 
+      PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1, SWEFlux_HLLC, SWEFlux_HLLC_loc, qf));
+      break; 
     default:
       SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
               "Unknown Riemann solver type for SWE");
@@ -268,67 +269,122 @@ static PetscErrorCode CreateBoundaryFluxQFunction(Ceed ceed, const RDyConfig con
   CeedQFunctionContext qf_context;
   switch (boundary_condition.flow->type) {
     case CONDITION_DIRICHLET:
-      if (num_sediment_comp == 0) {  // flow only
-        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1, SWEBoundaryFlux_Dirichlet_Roe, SWEBoundaryFlux_Dirichlet_Roe_loc, qf));
-        PetscCall(CreateSWEQFunctionContext(ceed, config, &qf_context));
-      } else {  // sediment dynamics
+      if (num_sediment_comp == 0) {    
         switch (config.numerics.riemann) {
-  case RIEMANN_ROE:
-    PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
-      SedimentBoundaryFlux_Dirichlet_Roe, SedimentBoundaryFlux_Dirichlet_Roe_loc, qf));
-    break;
-  case RIEMANN_HLL:
-    PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
-      SedimentBoundaryFlux_Dirichlet_HLL, SedimentBoundaryFlux_Dirichlet_HLL_loc, qf));
-    break;
-  case RIEMANN_HLLC:
-    PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
-      SedimentBoundaryFlux_Dirichlet_HLLC, SedimentBoundaryFlux_Dirichlet_HLLC_loc, qf));
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-            "Unknown Riemann solver type for sediment Dirichlet boundary");
-}
+        case RIEMANN_ROE:
+         PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SWEBoundaryFlux_Dirichlet_Roe, SWEBoundaryFlux_Dirichlet_Roe_loc, qf));  
+         break;
+        case RIEMANN_HLL:
+         PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SWEBoundaryFlux_Dirichlet_HLL, SWEBoundaryFlux_Dirichlet_HLL_loc, qf));  
+         break;
+        case RIEMANN_HLLC:
+         PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SWEBoundaryFlux_Dirichlet_HLLC, SWEBoundaryFlux_Dirichlet_HLLC_loc, qf)); 
+         break;
+        default:
+         SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+                "Unknown Riemann solver type for SWE Dirichlet boundary");
+         }
+         PetscCall(CreateSWEQFunctionContext(ceed, config, &qf_context));
+      }
+        else {  // sediment dynamics
+        switch (config.numerics.riemann) {
+        case RIEMANN_ROE:
+          PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+            SedimentBoundaryFlux_Dirichlet_Roe, SedimentBoundaryFlux_Dirichlet_Roe_loc, qf));
+          break;
+        case RIEMANN_HLL:
+          PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+            SedimentBoundaryFlux_Dirichlet_HLL, SedimentBoundaryFlux_Dirichlet_HLL_loc, qf));
+          break;
+        case RIEMANN_HLLC:
+          PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+           SedimentBoundaryFlux_Dirichlet_HLLC, SedimentBoundaryFlux_Dirichlet_HLLC_loc, qf));
+          break;
+        default:
+          SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+                  "Unknown Riemann solver type for sediment Dirichlet boundary");
+        }
         PetscCall(CreateSedimentQFunctionContext(ceed, config, &qf_context));
       }
       break;
+
     case CONDITION_REFLECTING:
-      if (num_sediment_comp == 0) {  // flow only
-        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1, SWEBoundaryFlux_Reflecting_Roe, SWEBoundaryFlux_Reflecting_Roe_loc, qf));
+      if (num_sediment_comp == 0) {  
+      switch (config.numerics.riemann) {
+      case RIEMANN_ROE:
+        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SWEBoundaryFlux_Reflecting_Roe, SWEBoundaryFlux_Reflecting_Roe_loc, qf));
+       break;
+      case RIEMANN_HLL:
+      PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SWEBoundaryFlux_Reflecting_HLL, SWEBoundaryFlux_Reflecting_HLL_loc, qf));  
+       break;
+      case RIEMANN_HLLC:
+        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SWEBoundaryFlux_Reflecting_HLLC, SWEBoundaryFlux_Reflecting_HLLC_loc, qf));
+       break;
+      default:
+      SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+                "Unknown Riemann solver type for SWE reflecting boundary");
+      }
         PetscCall(CreateSWEQFunctionContext(ceed, config, &qf_context));
       } else {  // sediment dynamics
       switch (config.numerics.riemann) {
-  case RIEMANN_ROE:
-    PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
-      SedimentBoundaryFlux_Reflecting_Roe, SedimentBoundaryFlux_Reflecting_Roe_loc, qf));
-    break;
-  case RIEMANN_HLL:
-    PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
-      SedimentBoundaryFlux_Reflecting_HLL, SedimentBoundaryFlux_Reflecting_HLL_loc, qf));
-    break;
-  case RIEMANN_HLLC:
-    PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
-      SedimentBoundaryFlux_Reflecting_HLLC, SedimentBoundaryFlux_Reflecting_HLLC_loc, qf));
-    break;
-  default:
-    SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
-            "Unknown Riemann solver type for sediment reflecting boundary");
-}
-        PetscCall(CreateSedimentQFunctionContext(ceed, config, &qf_context));
+      case RIEMANN_ROE:
+        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SedimentBoundaryFlux_Reflecting_Roe, SedimentBoundaryFlux_Reflecting_Roe_loc, qf));
+        break;
+      case RIEMANN_HLL:
+        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SedimentBoundaryFlux_Reflecting_HLL, SedimentBoundaryFlux_Reflecting_HLL_loc, qf));
+        break;
+      case RIEMANN_HLLC:
+        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+          SedimentBoundaryFlux_Reflecting_HLLC, SedimentBoundaryFlux_Reflecting_HLLC_loc, qf));
+        break;
+      default:
+        SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+                "Unknown Riemann solver type for sediment reflecting boundary");
       }
+      PetscCall(CreateSedimentQFunctionContext(ceed, config, &qf_context));
+    }
       break;
-    case CONDITION_CRITICAL_OUTFLOW:
-      if (num_sediment_comp == 0) {  // flow only
-        PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1, SWEBoundaryFlux_Outflow_Roe, SWEBoundaryFlux_Outflow_Roe_loc, qf));
+      
+      case CONDITION_CRITICAL_OUTFLOW:
+        if (num_sediment_comp == 0) {  // flow only
+          switch (config.numerics.riemann) {
+          case RIEMANN_ROE:
+          PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+            SWEBoundaryFlux_Outflow_Roe, SWEBoundaryFlux_Outflow_Roe_loc, qf));
+          break;
+          case RIEMANN_HLL:
+          PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+            SWEBoundaryFlux_Outflow_HLL, SWEBoundaryFlux_Outflow_HLL_loc, qf));
+          break;
+          case RIEMANN_HLLC:
+          PetscCallCEED(CeedQFunctionCreateInterior(ceed, 1,
+            SWEBoundaryFlux_Outflow_HLLC, SWEBoundaryFlux_Outflow_HLLC_loc, qf));
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF, PETSC_ERR_ARG_UNKNOWN_TYPE,
+                "Unknown Riemann solver type for SWE outflow boundary");
+          }
         PetscCall(CreateSWEQFunctionContext(ceed, config, &qf_context));
-      } else {  // sediment dynamics
-        PetscCheck(PETSC_FALSE, PETSC_COMM_WORLD, PETSC_ERR_USER, "CONDITION_CRITICAL_OUTFLOW not implemented");
+        } else {
+        PetscCheck(PETSC_FALSE, PETSC_COMM_WORLD, PETSC_ERR_USER,
+             "CONDITION_CRITICAL_OUTFLOW not implemented for sediment");
       }
       break;
-    default:
-      PetscCheck(PETSC_FALSE, PETSC_COMM_WORLD, PETSC_ERR_USER, "Invalid boundary condition encountered for boundary %" PetscInt_FMT "\n",
-                 boundary.id);
-  }
+
+      default:
+       PetscCheck(PETSC_FALSE, PETSC_COMM_WORLD, PETSC_ERR_USER,
+               "Invalid boundary condition encountered for boundary %" PetscInt_FMT "\n",
+               boundary.id);
+      }
+
 
   // add the context to the Q function
   if (0) PetscCallCEED(CeedQFunctionContextView(qf_context, stdout));

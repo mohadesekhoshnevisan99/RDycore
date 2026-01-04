@@ -39,6 +39,33 @@ struct SWEState_ {
 };
 typedef struct SWEState_ SWEState;
 
+CEED_QFUNCTION_HELPER inline void SWEPhysicalNormalFlux(
+    CeedScalar g, const SWEState q, CeedScalar sn, CeedScalar cn, CeedScalar Fn[3]) {
+  // NOTE: sn = n_y, cn = n_x (from operator_ceed.c packing)
+  const CeedScalar nx = cn, ny = sn;
+
+  const CeedScalar h  = q.h;
+  const CeedScalar hu = q.hu;
+  const CeedScalar hv = q.hv;
+
+  const CeedScalar u = SafeDiv(hu, h, fabs(h), RDY_TINY);
+  const CeedScalar v = SafeDiv(hv, h, fabs(h), RDY_TINY);
+
+  // E and G flux vectors
+  const CeedScalar E0 = hu;
+  const CeedScalar E1 = hu * u + 0.5 * g * h * h;
+  const CeedScalar E2 = hu * v;
+
+  const CeedScalar G0 = hv;
+  const CeedScalar G1 = hv * u;
+  const CeedScalar G2 = hv * v + 0.5 * g * h * h;
+
+  // Normal flux: F·n = E*n_x + G*n_y
+  Fn[0] = E0 * nx + G0 * ny;
+  Fn[1] = E1 * nx + G1 * ny;
+  Fn[2] = E2 * nx + G2 * ny;
+}
+
 // supported Riemann solver types
 #include "swe_hll_ceed_impl.h"
 #include "swe_hllc_ceed_impl.h"
@@ -159,6 +186,14 @@ CEED_QFUNCTION_HELPER int SWEBoundaryFlux_Dirichlet(void *ctx, CeedInt Q, const 
 CEED_QFUNCTION(SWEBoundaryFlux_Dirichlet_Roe)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
   return SWEBoundaryFlux_Dirichlet(ctx, Q, in, out, RIEMANN_FLUX_ROE);
 }
+CEED_QFUNCTION(SWEBoundaryFlux_Dirichlet_HLL)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
+  return SWEBoundaryFlux_Dirichlet(ctx, Q, in, out, RIEMANN_FLUX_HLL);
+}
+
+CEED_QFUNCTION(SWEBoundaryFlux_Dirichlet_HLLC)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
+  return SWEBoundaryFlux_Dirichlet(ctx, Q, in, out, RIEMANN_FLUX_HLLC);
+}
+
 
 // SWE boundary flux operator Q-function (reflecting condition)
 CEED_QFUNCTION_HELPER int SWEBoundaryFlux_Reflecting(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[],
@@ -211,6 +246,14 @@ CEED_QFUNCTION_HELPER int SWEBoundaryFlux_Reflecting(void *ctx, CeedInt Q, const
 CEED_QFUNCTION(SWEBoundaryFlux_Reflecting_Roe)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
   return SWEBoundaryFlux_Reflecting(ctx, Q, in, out, RIEMANN_FLUX_ROE);
 }
+CEED_QFUNCTION(SWEBoundaryFlux_Reflecting_HLL)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
+  return SWEBoundaryFlux_Reflecting(ctx, Q, in, out, RIEMANN_FLUX_HLL);
+}
+
+CEED_QFUNCTION(SWEBoundaryFlux_Reflecting_HLLC)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
+  return SWEBoundaryFlux_Reflecting(ctx, Q, in, out, RIEMANN_FLUX_HLLC);
+}
+
 
 // SWE boundary flux operator Q-function (outflow condition)
 CEED_QFUNCTION_HELPER int SWEBoundaryFlux_Outflow(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[],
@@ -267,6 +310,13 @@ CEED_QFUNCTION_HELPER int SWEBoundaryFlux_Outflow(void *ctx, CeedInt Q, const Ce
 
 CEED_QFUNCTION(SWEBoundaryFlux_Outflow_Roe)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
   return SWEBoundaryFlux_Outflow(ctx, Q, in, out, RIEMANN_FLUX_ROE);
+}
+CEED_QFUNCTION(SWEBoundaryFlux_Outflow_HLL)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
+  return SWEBoundaryFlux_Outflow(ctx, Q, in, out, RIEMANN_FLUX_HLL);
+}
+
+CEED_QFUNCTION(SWEBoundaryFlux_Outflow_HLLC)(void *ctx, CeedInt Q, const CeedScalar *const in[], CeedScalar *const out[]) {
+  return SWEBoundaryFlux_Outflow(ctx, Q, in, out, RIEMANN_FLUX_HLLC);
 }
 
 // SWE regional source operator Q-function
